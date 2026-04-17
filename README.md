@@ -1,246 +1,196 @@
 # Agent Marketplace
 
-A complete agent marketplace system with 3 agents, Agent-to-Agent (A2A) communication, authentication, and real-time logging.
+Production-style full-stack marketplace for data agents with secure MCP tooling, agent purchases, access keys, and operational dashboards.
 
-## Features
+## Current Version
 
-✅ **3 Intelligent Agents**
-- Data Analyzer: Analyzes business metrics and trends
-- Query Executive: Executes database queries and retrieval
-- Report Generator: Generates comprehensive reports
+Version: 2.0.0  
+Last updated: April 17, 2026
 
-✅ **Authentication System**
-- JWT-based token authentication
-- User registration and login
-- Password hashing with bcrypt
-- Role-based access control
+## What Is Implemented
 
-✅ **Agent-to-Agent Communication (A2A)**
-- Real-time message passing between agents
-- Message queue and history tracking
-- Full communication audit trail
+1. Five Chinook-focused agents:
+- Catalog Intelligence Agent
+- Revenue Intelligence Agent
+- Customer Lifecycle Agent
+- Artist Performance Agent
+- Operations Workforce Agent
 
-✅ **Comprehensive Logging**
-- Real-time event logging
-- Multiple log levels (INFO, WARN, ERROR)
-- Event filtering and viewing
-- Log persistence and search
+2. Secure authentication and purchases:
+- JWT login and registration
+- Per-agent purchase records
+- Access key generation for purchased ask endpoints
 
-✅ **Beautiful Dashboard**
-- Agent cards with capabilities
-- A2A communication UI
-- Live logs viewer with filtering
-- Dark modern design with Tailwind CSS
+3. Agent-gated MCP model:
+- MCP tools are provisioned through purchased agents
+- Direct MCP purchase endpoint is disabled
+- MCP execute path enforces entitlement from purchased agents
+
+4. Working MCP tool execution:
+- Filesystem, Git, Web, Database, API, and Code tool categories
+- Input validation, rate limiting, readonly SQL restrictions, URL safety checks
+
+5. Frontend marketplace dashboard:
+- Agent listing and purchase flow
+- MCP tools runner with per-server tool execution
+- Logs view and A2A panel
+- Updated branding and consistent UI styling
+
+## MCP Servers And Active Tools
+
+- mcp-001 Filesystem Tools:
+  - list_directory
+  - read_file
+  - write_file
+
+- mcp-002 Git Integration:
+  - git_status
+  - view_diff
+  - recent_commits
+
+- mcp-003 Web Search and Browsing:
+  - search
+  - fetch_url
+  - get_page_content
+
+- mcp-004 Database Query:
+  - execute_query
+  - list_tables
+  - describe_table
+
+- mcp-005 API Client:
+  - set_headers
+  - get_request
+  - post_request
+
+- mcp-006 Code Analysis:
+  - parse_code
+  - analyze_syntax
+  - format_code
 
 ## Project Structure
 
-```
+```text
 agent/
 ├── backend/
-│   ├── main.py              # FastAPI backend server
-│   ├── requirements.txt      # Python dependencies
-│   └── marketplace.log       # Log file (generated)
+│   ├── main.py
+│   ├── requirements.txt
+│   ├── Chinook.db
+│   └── inspect_db.py
 ├── frontend/
-│   └── index.html           # Single-page application
-└── README.md               # This file
+│   ├── package.json
+│   ├── public/
+│   └── src/
+├── diagnostic.html
+├── examples.html
+└── README.md
 ```
 
-## Installation & Setup
+## Local Setup
 
-### 1. Install Backend Dependencies
+### Backend
 
-```bash
+```powershell
 cd backend
 pip install -r requirements.txt
+uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
-### 2. Start the Backend Server
+API base URL:
 
-```bash
-cd backend
-python main.py
+```text
+http://127.0.0.1:8000
 ```
 
-The API will be available at `http://localhost:8000`
+### Frontend
 
-### 3. Open Frontend
-
-Open `frontend/index.html` in your web browser, or serve it using a simple HTTP server:
-
-```bash
+```powershell
 cd frontend
-python -m http.server 8080
+npm install
+npm start
 ```
 
-Then visit `http://localhost:8080`
+Frontend URL (default):
+
+```text
+http://localhost:3000
+```
 
 ## Demo Credentials
 
-Login with these test accounts:
+| Username | Password |
+| --- | --- |
+| admin | admin123 |
+| user1 | user123 |
 
-| Username | Password   | Role  |
-|----------|-----------|-------|
-| admin    | admin123  | Admin |
-| user1    | user123   | User  |
+## Core API Endpoints
 
-## Security Features
-
-✅ **Secure Access Credentials**
-- JWT tokens and access keys are **NOT exposed in URLs**
-- Credentials are only visible when you click "Access Details" button for owned agents
-- Credentials are fetched via authenticated API calls (kept out of browser history)
-- Each purchased agent gets a unique access key (UUID-based)
-- Only authenticated users can view their own access details
-
-## API Endpoints
-
-### Authentication
-- `POST /auth/login` - Login user
-- `POST /auth/register` - Register new user
+### Auth
+- POST /auth/login
+- POST /auth/register
 
 ### Agents
-- `GET /agents` - Get all agents
-- `GET /agents/{agent_id}` - Get agent details
-- `GET /agents/{agent_id}/access-details` - Get access URL and key for owned agent (requires purchase)
-- `POST /agents/{agent_id}/purchase` - Purchase an agent
-- `POST /agents/send-message` - Send A2A message
-- `GET /agents/{agent_id}/messages` - Get agent messages
-- `GET /agents/{agent_id}/ask` - Query an agent (supports both JWT and access key authentication)
-- `GET /agents/communication/history` - Get communication history
+- GET /agents
+- GET /agents/{agent_id}
+- POST /agents/{agent_id}/purchase
+- GET /agents/{agent_id}/access-details
+- GET /agents/{agent_id}/ask
+- POST /agents/send-message
+- GET /agents/{agent_id}/messages
+
+### MCP
+- GET /users/me/mcp-purchases
+- GET /mcp-servers
+- GET /mcp-servers/{server_id}
+- POST /mcp-servers/{server_id}/execute
 
 ### Logs
-- `GET /logs` - Get system logs
-- `GET /logs/events` - Get unique event types
-- `DELETE /logs` - Clear all logs (admin only)
+- GET /logs
+- GET /logs/events
+- DELETE /logs
 
-### Health
-- `GET /health` - Health check
-- `GET /` - API info
+## MCP Execution Request Format
 
-## Usage
-
-### Login
-1. Open the application
-2. Enter credentials (admin/admin123 or user1/user123)
-3. Click "Login" to authenticate
-
-### View Agents
-- Navigate to "Agent Cards" tab
-- See all 3 available agents with their capabilities
-- Each agent shows its purpose and capabilities
-
-### Send A2A Messages
-1. Go to "A2A Communication" tab
-2. Select "From Agent" and "To Agent"
-3. Enter a JSON payload (e.g., `{"action": "query", "data": "test"}`)
-4. Click "Send Message"
-5. View the response and communication history
-
-### View System Logs
-1. Navigate to "Logs Viewer" tab
-2. Filter logs by event type
-3. See real-time events including:
-   - Authentication events
-   - Agent communications
-   - API access logs
-   - System events
-
-## Security Notes
-
-⚠️ **Production Considerations:**
-- Change `SECRET_KEY` in `main.py` to a secure random value
-- Use environment variables for sensitive configuration
-- Implement a real database (not in-memory)
-- Add rate limiting and API key management
-- Enable HTTPS/SSL for production
-- Use proper user management system
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────┐
-│          Frontend (HTML/JS/Tailwind)            │
-├─────────────────────────────────────────────────┤
-│                   FastAPI Backend               │
-│  ┌──────────────────────────────────────────┐   │
-│  │          Authentication Layer             │   │
-│  │  (JWT, Password Hashing, Permissions)    │   │
-│  └──────────────────────────────────────────┘   │
-│  ┌──────────────────────────────────────────┐   │
-│  │      Agent Management System              │   │
-│  │  (3 Agents with Capabilities)            │   │
-│  └──────────────────────────────────────────┘   │
-│  ┌──────────────────────────────────────────┐   │
-│  │  A2A Communication Layer                  │   │
-│  │  (Message Queue, History, Routing)       │   │
-│  └──────────────────────────────────────────┘   │
-│  ┌──────────────────────────────────────────┐   │
-│  │        Logging System                     │   │
-│  │  (Event Tracking, Audit Trail)           │   │
-│  └──────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────┘
-```
-
-## Example: A2A Communication
-
-From `Data Analyzer` to `Query Executive`:
+Supported request body for MCP execute:
 
 ```json
 {
-  "action": "fetch_metrics",
-  "filters": {
-    "date_range": "last_30_days",
-    "category": "sales"
-  },
-  "format": "json"
+  "tool": "get_page_content",
+  "arguments": {
+    "url": "https://example.com",
+    "max_chars": 2000
+  }
 }
 ```
 
-This creates a log entry:
-```
-[2024-04-04 10:30:45] A2A_MESSAGE | {
-  "message_id": "abc123...",
-  "from": "agent-001",
-  "to": "agent-002",
-  "payload": {...}
-}
-```
+Compatibility behavior:
+- Top-level tool arguments are accepted for common fields.
+- If a full execute envelope is pasted inside arguments, it is auto-unwrapped.
+
+## Security Notes
+
+1. Web/API MCP tools only allow public http/https targets.
+2. Localhost, internal domains, private IPs, and non-standard ports are blocked.
+3. Database MCP is readonly and allows SELECT-only queries.
+4. MCP calls are rate-limited per user.
+5. Sensitive files and workspace-protected paths are blocked for destructive operations.
 
 ## Troubleshooting
 
-### CORS Errors
-- Backend CORS is enabled for all origins (* format)
-- Ensure backend is running on `http://localhost:8000`
+1. MCP returns purchase error:
+- Purchase an agent that includes that MCP server.
 
-### Authentication Failed
-- Verify username and password match test credentials
-- Check browser console for error details
+2. MCP arguments error:
+- Ensure arguments is valid JSON object.
+- Use tool-specific fields shown in examples.
 
-### Logs Not Showing
-- Ensure you're logged in with valid token
-- Check backend logs at `backend/marketplace.log`
+3. Search/web fetch error:
+- Verify URL starts with http or https.
+- Verify target host is publicly reachable.
 
-### A2A Messages Not Sending
-- Verify agent IDs are correct (agent-001, agent-002, agent-003)
-- Ensure JSON payload is valid
-- Check that both agents exist
-
-## Future Enhancements
-
-- [ ] Database persistence (PostgreSQL/MongoDB)
-- [ ] Advanced agent routing with ML
-- [ ] Real-time WebSocket notifications
-- [ ] Agent performance metrics
-- [ ] Rate limiting and quotas
-- [ ] Multi-tenant support
-- [ ] Agent versioning and rollback
-- [ ] Custom agent creation UI
+4. Git tools unavailable:
+- Ensure project is inside a valid git repository.
 
 ## License
 
-MIT License - Feel free to use and modify
-
----
-
-**Created:** April 4, 2026  
-**Version:** 1.0
+MIT
