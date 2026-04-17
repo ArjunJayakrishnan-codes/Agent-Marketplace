@@ -118,14 +118,16 @@ fake_users_db = {
         "email": "admin@marketplace.com",
         "hashed_password": pwd_context.hash("admin123"),
         "purchased_agents": {},
-        "purchased_mcp_servers": {}  # {mcp_server_id: {purchase_date, license_key}}
+        "purchased_mcp_servers": {},  # {mcp_server_id: {purchase_date, license_key}}
+        "active_token_jti": None
     },
     "user1": {
         "username": "user1",
         "email": "user1@marketplace.com",
         "hashed_password": pwd_context.hash("user123"),
         "purchased_agents": {},
-        "purchased_mcp_servers": {}  # {mcp_server_id: {purchase_date, license_key}}
+        "purchased_mcp_servers": {},  # {mcp_server_id: {purchase_date, license_key}}
+        "active_token_jti": None
     }
 }
 
@@ -186,6 +188,16 @@ def verify_token(token: str) -> str:
         username: str = payload.get("sub")
         if username is None:
             raise HTTPException(status_code=401, detail="Invalid token")
+
+        user = fake_users_db.get(username)
+        if user is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        token_jti = payload.get("jti")
+        active_jti = user.get("active_token_jti")
+        if not token_jti or token_jti != active_jti:
+            raise HTTPException(status_code=401, detail="Token is no longer active")
+
         return username
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -1114,7 +1126,9 @@ async def login(login_request: LoginRequest):
         log_event("AUTH_FAILED", {"username": login_request.username}, level="WARN")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    access_token = create_access_token(data={"sub": login_request.username})
+    new_token_jti = str(uuid4())
+    user["active_token_jti"] = new_token_jti
+    access_token = create_access_token(data={"sub": login_request.username, "jti": new_token_jti})
     
     log_event("AUTH_SUCCESS", {"username": login_request.username}, user=login_request.username)
     
@@ -1136,10 +1150,14 @@ async def register(user: LoginRequest):
         "username": user.username,
         "email": f"{user.username}@marketplace.com",
         "hashed_password": hashed_password,
-        "purchased_agents": {}
+        "purchased_agents": {},
+        "purchased_mcp_servers": {},
+        "active_token_jti": None
     }
-    
-    access_token = create_access_token(data={"sub": user.username})
+
+    new_token_jti = str(uuid4())
+    fake_users_db[user.username]["active_token_jti"] = new_token_jti
+    access_token = create_access_token(data={"sub": user.username, "jti": new_token_jti})
     
     log_event("USER_REGISTERED", {"username": user.username}, user=user.username)
     
