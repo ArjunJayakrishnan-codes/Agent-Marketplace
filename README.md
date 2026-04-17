@@ -190,7 +190,3 @@ Compatibility behavior:
 
 4. Git tools unavailable:
 - Ensure project is inside a valid git repository.
-
-## License
-
-MIT
