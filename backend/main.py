@@ -1191,11 +1191,9 @@ async def purchase_agent(
 
     log_event("AGENT_PURCHASED", {"agent_id": agent_id, "user": current_user}, user=current_user)
 
-    # Build full URL based on request
+    # Build full URL based on request/proxy prefix
+    full_url = build_agent_ask_url(request, agent_id)
     agent_endpoint_path = f"/agents/{agent_id}/ask"
-    # Get base URL from request
-    base_url = f"{request.url.scheme}://{request.url.netloc}"
-    full_url = f"{base_url}{agent_endpoint_path}"
 
     return {
         "message": "Purchase successful",
@@ -1233,10 +1231,11 @@ async def get_my_purchases(request: Request, current_user: str = Depends(get_cur
     # Enrich with agent name and endpoint
     result = {}
     base_url = f"{request.url.scheme}://{request.url.netloc}"
+    api_prefix = get_public_api_prefix(request)
     
     for aid, rec in purchases.items():
         agent = agents_db.get(aid)
-        full_endpoint = f"{base_url}/agents/{aid}/ask"
+        full_endpoint = f"{base_url}{api_prefix}/agents/{aid}/ask"
         access_key = rec.get("access_key")
         result[aid] = {
             "agent_name": agent.name if agent else aid,
@@ -1530,6 +1529,20 @@ AGENT_EXAMPLE_QUERIES = {
     ]
 }
 
+
+def get_public_api_prefix(request: Request) -> str:
+    """Infer external API prefix (e.g. /api) from incoming request path."""
+    path = request.url.path or ""
+    if path == "/api" or path.startswith("/api/"):
+        return "/api"
+    return ""
+
+
+def build_agent_ask_url(request: Request, agent_id: str) -> str:
+    base_url = f"{request.url.scheme}://{request.url.netloc}"
+    api_prefix = get_public_api_prefix(request)
+    return f"{base_url}{api_prefix}/agents/{agent_id}/ask"
+
 @app.get("/agents/{agent_id}/access-details")
 async def get_access_details(
     agent_id: str, 
@@ -1555,10 +1568,8 @@ async def get_access_details(
     purchase_record = purchases[agent_id]
     access_key = purchase_record.get("access_key")
     
-    # Build the access URL
-    agent_endpoint_path = f"/agents/{agent_id}/ask"
-    base_url = f"{request.url.scheme}://{request.url.netloc}"
-    full_url = f"{base_url}{agent_endpoint_path}"
+    # Build the access URL (respect reverse-proxy API prefix)
+    full_url = build_agent_ask_url(request, agent_id)
     
     log_event("ACCESS_DETAILS_FETCHED", {"agent_id": agent_id}, user=current_user)
     
@@ -2281,7 +2292,7 @@ async def get_agent_endpoint_info(agent_id: str):
                             <label class="block text-sm font-medium text-gray-700 mb-2">JWT Token or Access Key</label>
                             <input type="text" id="tokenInput" placeholder="Paste your JWT token or access key here or get one from Agent Exchange..." 
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <p class="text-xs text-gray-500 mt-2">Get a token by logging in and purchasing at the <a href="/frontend/index.html" class="text-blue-600 hover:underline">Agent Exchange</a></p>
+                            <p class="text-xs text-gray-500 mt-2">Get a token by logging in and purchasing at the <a href="/" class="text-blue-600 hover:underline">Agent Exchange</a></p>
                         </div>
                     </div>
                 </div>
@@ -2332,6 +2343,7 @@ async def get_agent_endpoint_info(agent_id: str):
 
         <script>
         const AGENT_ID = '{agent_id}';
+        const API_PREFIX = window.location.pathname.startsWith('/api/') ? '/api' : '';
 
         function fillQuestion(question) {{
             document.getElementById('questionInput').value = question;
@@ -2342,6 +2354,12 @@ async def get_agent_endpoint_info(agent_id: str):
             let token = document.getElementById('tokenInput').value.trim();
             const question = document.getElementById('questionInput').value.trim();
 
+            if (!token) {{
+                try {{
+                    token = localStorage.getItem('token') || '';
+                    if (token) document.getElementById('tokenInput').value = token;
+                }} catch (_) {{}}
+            }}
             if (!token) {{
                 showError('Please enter your JWT token or access key');
                 return;
@@ -2355,7 +2373,7 @@ async def get_agent_endpoint_info(agent_id: str):
             hideError();
 
             try {{
-                const response = await fetch(`http://localhost:8000/agents/${{AGENT_ID}}/ask`, {{
+                const response = await fetch(`${{API_PREFIX}}/agents/${{AGENT_ID}}/ask`, {{
                     method: 'POST',
                     headers: {{
                         'Authorization': `Bearer ${{token}}`,
@@ -2404,6 +2422,14 @@ async def get_agent_endpoint_info(agent_id: str):
                 askAgent();
             }}
         }});
+
+        // Pre-fill token from localStorage when available.
+        try {{
+            const savedToken = localStorage.getItem('token');
+            if (savedToken) {{
+                document.getElementById('tokenInput').value = savedToken;
+            }}
+        }} catch (_) {{}}
         </script>
     </body>
     </html>

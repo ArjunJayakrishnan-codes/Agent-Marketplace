@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agent Marketplace - React</title>
     <link rel="icon" href="data:,">
+    <script>
+        (function () {
+            var path = window.location.pathname || "";
+            var match = path.match(/^\/agents\/([^/]+)\/ask\/?$/);
+            if (!match) return;
+
+            var target = "/api" + path + (window.location.search || "") + (window.location.hash || "");
+            window.location.replace(target);
+        })();
+    </script>
 </head>
 <body>
     <div id="root"></div>
