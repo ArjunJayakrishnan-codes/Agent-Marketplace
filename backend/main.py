@@ -1703,7 +1703,7 @@ async def ask_agent(
     user_record = fake_users_db.get(actual_user)
     has_purchased = user_record and agent_id in user_record.get("purchased_agents", {})
 
-    demo_limit = 3
+    demo_limit = 5
     demo_mode = False
     demo_uses_left = None
 
@@ -1716,7 +1716,7 @@ async def ask_agent(
         if used >= demo_limit:
             raise HTTPException(
                 status_code=403,
-                detail="Demo limit reached (3/3). Purchase this agent to continue."
+                detail="Demo limit reached (5/5). Purchase this agent to continue."
             )
 
         used += 1
