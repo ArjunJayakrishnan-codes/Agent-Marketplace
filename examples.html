@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Marketplace - Example Questions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .example-card { @apply bg-white rounded-lg shadow-md p-6 mb-4 border-l-4 }
+        .example-qa { @apply mb-3 p-3 bg-gray-50 rounded }
+        .question { @apply font-semibold text-blue-700 mb-1 }
+        .answer { @apply text-gray-700 text-sm }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-8">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <h1 class="text-3xl font-bold mb-2 text-gray-800">Agent Marketplace - Example Questions</h1>
+            <p class="text-gray-600 mb-8">Here are working example questions you can ask each agent. Each user gets 10 free demo tries per agent, then must purchase for unlimited access.</p>
+
+            <!-- Query Executive -->
+            <div class="example-card border-blue-500">
+                <h2 class="text-2xl font-bold text-blue-700 mb-4">
+                    <span class="inline-block bg-blue-100 rounded-full w-8 h-8 text-center leading-8 mr-2">1</span>
+                    Query Executive (agent-002)
+                </h2>
+                <p class="text-gray-600 mb-4">Specializes in track and genre queries from the Chinook music database (3,503 total tracks).</p>
+                
+                <div class="example-qa">
+                    <div class="question">❓ How many rock tracks?</div>
+                    <div class="answer">✓ There are 1297 Rock tracks in the Chinook database.</div>
+                </div>
+                
+                <div class="example-qa">
+                    <div class="question">❓ How many total tracks?</div>
+                    <div class="answer">✓ There are 3503 total tracks in the Chinook database.</div>
+                </div>
+                
+                <div class="example-qa">
+                    <div class="question">❓ What genres are available?</div>
+                    <div class="answer">✓ Genres and their track counts: Alternative (40), Rock (1297), Latin (579), Metal (374), Jazz (130), etc.</div>
+                </div>
+
+                <div class="example-qa">
+                    <div class="question">❓ Top artists by tracks?</div>
+                    <div class="answer">✓ Artists with most tracks: [various artists with track counts]</div>
+                </div>
+
+                <div class="example-qa">
+                    <div class="question">❓ Album information</div>
+                    <div class="answer">✓ Top Albums by Track Count: [albums with artists and track counts]</div>
+                </div>
+            </div>
+
+            <!-- Data Analyzer -->
+            <div class="example-card border-green-500">
+                <h2 class="text-2xl font-bold text-green-700 mb-4">
+                    <span class="inline-block bg-green-100 rounded-full w-8 h-8 text-center leading-8 mr-2">2</span>
+                    Data Analyzer (agent-001)
+                </h2>
+                <p class="text-gray-600 mb-4">Analyzes music catalog patterns and business metrics from the Chinook database.</p>
+                
+                <div class="example-qa">
+                    <div class="question">❓ What are the top genres?</div>
+                    <div class="answer">✓ Top 5 Genres by Track Count: Rock (1297), Latin (579), Metal (374), Alternative & Punk (332), Jazz (130)</div>
+                </div>
+                
+                <div class="example-qa">
+                    <div class="question">❓ Who are the top artists?</div>
+                    <div class="answer">✓ Top Artists by Album Count: [artists with their album counts]</div>
+                </div>
+                
+                <div class="example-qa">
+                    <div class="question">❓ Top customers by spending?</div>
+                    <div class="answer">✓ Top 5 Customers by Spending: [customer names with dollar amounts]</div>
+                </div>
+
+                <div class="example-qa">
+                    <div class="question">❓ Database statistics</div>
+                    <div class="answer">✓ Chinook Database Overview: 3503 tracks, 275 artists, 25 genres. Total customers: [X]</div>
+                </div>
+
+                <div class="example-qa">
+                    <div class="question">❓ Catalog overview</div>
+                    <div class="answer">✓ Complete breakdown of music catalog size and distribution</div>
+                </div>
+            </div>
+
+            <!-- Report Generator -->
+            <div class="example-card border-purple-500">
+                <h2 class="text-2xl font-bold text-purple-700 mb-4">
+                    <span class="inline-block bg-purple-100 rounded-full w-8 h-8 text-center leading-8 mr-2">3</span>
+                    Report Generator (agent-003)
+                </h2>
+                <p class="text-gray-600 mb-4">Generates structured business reports from Chinook database metrics.</p>
+                
+                <div class="example-qa">
+                    <div class="question">❓ Music catalog report</div>
+                    <div class="answer">✓ Catalog Report: Total Tracks: 3503, Artists: 275, Genres: 25. Database contains comprehensive music catalog.</div>
+                </div>
+                
+                <div class="example-qa">
+                    <div class="question">❓ Sales and revenue report</div>
+                    <div class="answer">✓ Revenue Report: Total Revenue: $[X], Total Orders: [Y], Average Order Value: $[Z]</div>
+                </div>
+                
+                <div class="example-qa">
+                    <div class="question">❓ Employee and staff report</div>
+                    <div class="answer">✓ Staff Report: Total Employees: [X], Sales Representatives: [Y]</div>
+                </div>
+
+                <div class="example-qa">
+                    <div class="question">❓ What reports are available?</div>
+                    <div class="answer">✓ Available reports: Music Catalog, Sales & Revenue, Employee & Staff</div>
+                </div>
+
+                <div class="example-qa">
+                    <div class="question">❓ Generate summary</div>
+                    <div class="answer">✓ Database Summary: [X] tracks, [Y] customers. Access detailed music, sales, or staff reports.</div>
+                </div>
+            </div>
+
+            <!-- System Info -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
+                <h3 class="text-lg font-bold text-blue-900 mb-3">📊 System Information</h3>
+                <ul class="text-gray-700 space-y-2 text-sm">
+                    <li><strong>Database:</strong> Chinook (Music Store) - 3,503 tracks from 275 artists</li>
+                    <li><strong>Demo Tries:</strong> 10 free queries per agent per user</li>
+                    <li><strong>Purchase:</strong> Unlimited access after purchase (generates UUID access key)</li>
+                    <li><strong>Authentication:</strong> JWT tokens or UUID access keys</li>
+                    <li><strong>API Base:</strong> http://localhost:8000</li>
+                </ul>
+            </div>
+
+            <!-- Quick Test Section -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mt-8">
+                <h3 class="text-lg font-bold text-yellow-900 mb-3">🧪 Quick Test</h3>
+                <p class="text-gray-700 mb-4">Try these test credentials:</p>
+                <div class="bg-yellow-100 p-4 rounded font-mono text-sm mb-4">
+                    <div>Username: <strong>testuser</strong></div>
+                    <div>Password: <strong>testpass</strong></div>
+                </div>
+                <p class="text-gray-600 text-sm">After login, each agent shows demo tries remaining. Query the agents with the examples above, then purchase one to get unlimited access.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

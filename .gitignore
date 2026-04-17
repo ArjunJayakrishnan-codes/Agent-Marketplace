@@ -1,0 +1,25 @@
+﻿# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Node
+frontend/node_modules/
+node_modules/
+
+# Logs and runtime files
+*.log
+
+# Local/temp artifacts
+tmp/
+tmp_mcp/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Environment files
+.env
+.env.*
+!.env.example

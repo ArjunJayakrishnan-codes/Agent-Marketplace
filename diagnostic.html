@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Marketplace - Diagnostic</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1a1a1a;
+            color: #0f0;
+            padding: 20px;
+        }
+        .section {
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin: 10px 0;
+            background: #0a0a0a;
+        }
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        .pending { color: #ff0; }
+        button { background: #f000; color: #fff; padding: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Agent Marketplace - Diagnostic Page</h1>
+    <div class="section">
+        <h2>Frontend Health Check</h2>
+        <div id="status">Checking...</div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:8001";
+        const status = document.getElementById('status');
+        
+        async function runDiagnostics() {
+            let html = '';
+            
+            // 1. Check localStorage
+            html += '<div class="pending">1. Checking localStorage...</div>';
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            if (token) {
+                html += `<div class="pass">   ✓ Token found: ${token.substring(0, 20)}...</div>`;
+                html += `<div class="pass">   ✓ User: ${user}</div>`;
+            } else {
+                html += '<div class="fail">   ✗ No token in localStorage</div>';
+            }
+            
+            // 2. Check API connectivity
+            html += '<div class="pending" style="margin-top:10px">2. Testing API connectivity...</div>';
+            try {
+                const res = await fetch(`${API_BASE}/`, { method: 'GET' });
+                if (res.ok) {
+                    html += `<div class="pass">   ✓ Backend health: ${res.status} OK</div>`;
+                } else {
+                    html += `<div class="fail">   ✗ Backend health: ${res.status}</div>`;
+                }
+            } catch (e) {
+                html += `<div class="fail">   ✗ Cannot connect to backend: ${e.message}</div>`;
+            }
+            
+            // 3. Test /agents endpoint (if token exists)
+            if (token) {
+                html += '<div class="pending" style="margin-top:10px">3. Testing GET /agents...</div>';
+                try {
+                    const res = await fetch(`${API_BASE}/agents`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    html += `   Status: ${res.status}<br>`;
+                    if (res.ok) {
+                        const agents = await res.json();
+                        if (Array.isArray(agents)) {
+                            html += `<div class="pass">   ✓ Agents loaded: ${agents.length} agents</div>`;
+                            if (agents.length > 0) {
+                                html += `<div class="pass">   ✓ First agent: ${agents[0].id} - ${agents[0].name}</div>`;
+                            }
+                        } else {
+                            html += `<div class="fail">   ✗ Response is not an array: ${typeof agents}</div>`;
+                        }
+                    } else {
+                        const text = await res.text();
+                        html += `<div class="fail">   ✗ Failed: ${res.status} - ${text.substring(0, 100)}</div>`;
+                    }
+                } catch (e) {
+                    html += `<div class="fail">   ✗ Error: ${e.message}</div>`;
+                }
+                
+                // 4. Test /users/me/purchases
+                html += '<div class="pending" style="margin-top:10px">4. Testing GET /users/me/purchases...</div>';
+                try {
+                    const res = await fetch(`${API_BASE}/users/me/purchases`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        html += `<div class="pass">   ✓ Purchases loaded: ${JSON.stringify(data).substring(0, 50)}...</div>`;
+                    } else {
+                        html += `<div class="fail">   ✗ Failed: ${res.status}</div>`;
+                    }
+                } catch (e) {
+                    html += `<div class="fail">   ✗ Error: ${e.message}</div>`;
+                }
+            }
+            
+            // 5. CORS check
+            html += '<div class="pending" style="margin-top:10px">5. Testing CORS...</div>';
+            try {
+                const res = await fetch(`${API_BASE}/agents`, {
+                    method: 'OPTIONS',
+                    headers: { 'Origin': window.location.origin }
+                });
+                const corsHeader = res.headers.get('Access-Control-Allow-Origin');
+                if (corsHeader === '*' || corsHeader === window.location.origin) {
+                    html += `<div class="pass">   ✓ CORS header: ${corsHeader}</div>`;
+                } else {
+                    html += `<div class="fail">   ✗ CORS issue: ${corsHeader || 'NOT SET'}</div>`;
+                }
+            } catch (e) {
+                html += `<div class="fail">   ✗ CORS check failed: ${e.message}</div>`;
+            }
+            
+            // 6. Try to login if no token
+            if (!token) {
+                html += '<div class="pending" style="margin-top:10px">6. Attempting test login...</div>';
+                try {
+                    const res = await fetch(`${API_BASE}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: 'admin', password: 'admin123' })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        localStorage.setItem('token', data.access_token);
+                        localStorage.setItem('user', data.user);
+                        html += `<div class="pass">   ✓ Logged in as ${data.user}</div>`;
+                        html += `<div class="pass">   ⟲ Reload page to use the token</div>`;
+                    } else {
+                        html += `<div class="fail">   ✗ Login failed: ${res.status}</div>`;
+                    }
+                } catch (e) {
+                    html += `<div class="fail">   ✗ Login error: ${e.message}</div>`;
+                }
+            }
+            
+            status.innerHTML = html;
+            console.log('Diagnostics complete');
+        }
+        
+        runDiagnostics();
+    </script>
+</body>
+</html>

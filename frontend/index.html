@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Marketplace</title>
+    <link rel="icon" href="data:,">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 font-sans min-h-screen">
+
+    <!-- AGENT DETAIL MODAL -->
+    <div id="agent-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+        <div class="bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-2xl border border-slate-700 max-h-96 overflow-y-auto">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 id="modal-agent-name" class="text-3xl font-bold text-white mb-2">Agent Name</h2>
+                    <p id="modal-agent-id" class="text-gray-400 font-mono text-sm">ID: agent-001</p>
+                </div>
+                <button id="close-modal" class="text-gray-400 hover:text-white text-2xl">✕</button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <h3 class="text-orange-400 font-semibold mb-2">Description</h3>
+                    <p id="modal-agent-description" class="text-gray-300">Agent description</p>
+                </div>
+
+                <div>
+                    <h3 class="text-orange-400 font-semibold mb-2">Purpose</h3>
+                    <p id="modal-agent-purpose" class="text-gray-300">Agent purpose</p>
+                </div>
+
+                <div>
+                    <h3 class="text-orange-400 font-semibold mb-2">Capabilities</h3>
+                    <div id="modal-agent-capabilities" class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-orange-500 bg-opacity-30 text-orange-300 text-xs rounded">capability</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-orange-400 font-semibold mb-2">Version & Status</h3>
+                    <div class="flex gap-4">
+                        <div class="text-gray-300">
+                            <span class="text-gray-500">Version:</span> <span id="modal-agent-version">1.0</span>
+                        </div>
+                        <div id="modal-agent-status" class="px-3 py-1 rounded-full text-xs font-semibold bg-green-500 bg-opacity-30 text-green-300">
+                            active
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-700">
+                    <h3 class="text-orange-400 font-semibold mb-3">Ask This Agent</h3>
+                    <form id="agent-question-form" class="space-y-2">
+                        <input 
+                            type="hidden" 
+                            id="question-agent-id"
+                            value=""
+                        />
+                        <textarea 
+                            id="agent-question-input"
+                            class="w-full px-4 py-2 bg-slate-700 text-white rounded border border-slate-600 focus:outline-none focus:border-orange-400 text-sm"
+                            rows="3"
+                            placeholder="Ask a question to this agent..."
+                            required
+                        ></textarea>
+                        <button type="submit" class="w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded transition text-sm">
+                            Send Question
+                        </button>
+                    </form>
+                    
+                    <!-- Agent Response -->
+                    <div id="agent-question-response" class="mt-4 p-4 bg-green-900 bg-opacity-40 border border-green-500 rounded hidden">
+                        <h4 class="text-green-300 font-semibold mb-2">✓ Agent Response:</h4>
+                        <p id="agent-question-response-text" class="text-white text-sm leading-relaxed whitespace-pre-wrap"></p>
+                    </div>
+                    
+                    <!-- Loading State -->
+                    <div id="agent-question-loading" class="mt-4 p-4 bg-blue-900 bg-opacity-40 border border-blue-500 rounded hidden">
+                        <p class="text-blue-300 text-sm animate-pulse">⏳ Waiting for agent response...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AGENT ACCESS/PURCHASE MODAL -->
+    <div id="agent-access-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+        <div class="bg-slate-800 rounded-lg shadow-2xl p-8 w-full max-w-2xl border border-slate-700 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-2">✓ Agent Access Details</h2>
+                    <p id="access-agent-name" class="text-gray-400 text-lg">Agent Name</p>
+                </div>
+                <button onclick="document.getElementById('agent-access-modal').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl">✕</button>
+            </div>
+
+            <div class="space-y-6">
+                <!-- URL Section -->
+                <div class="bg-slate-900 border border-slate-700 rounded-lg p-4">
+                    <h3 class="text-orange-400 font-semibold mb-3">🔗 API URL</h3>
+                    <div class="bg-slate-950 p-3 rounded border border-slate-600 mb-2 flex items-center justify-between gap-2">
+                        <code id="access-url" class="text-green-400 text-sm font-mono break-all flex-1">https://localhost:8001/agents/agent-001/ask</code>
+                        <button onclick="copyToClipboard('access-url', this)" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded font-semibold whitespace-nowrap">Copy URL</button>
+                    </div>
+                </div>
+
+                <!-- Access Token Section -->
+                <div class="bg-slate-900 border border-slate-700 rounded-lg p-4">
+                    <h3 class="text-orange-400 font-semibold mb-3">🔐 Access Token</h3>
+                    <div class="bg-slate-950 p-3 rounded border border-slate-600 mb-2 flex items-center justify-between gap-2">
+                        <code id="access-token" class="text-blue-400 text-sm font-mono break-all flex-1">token-uuid-here</code>
+                        <button onclick="copyToClipboard('access-token', this)" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded font-semibold whitespace-nowrap">Copy Token</button>
+                    </div>
+                    <p class="text-gray-400 text-xs mt-2">Use this token in the Authorization header: <code class="bg-slate-950 px-2 py-1 rounded">Authorization: Bearer {token}</code></p>
+                </div>
+
+                <!-- Usage Examples -->
+                <div class="bg-slate-900 border border-slate-700 rounded-lg p-4">
+                    <h3 class="text-orange-400 font-semibold mb-3">📝 Usage Examples</h3>
+                    
+                    <!-- cURL Example -->
+                    <div class="mb-4">
+                        <h4 class="text-white font-semibold text-sm mb-2">cURL Command:</h4>
+                        <div class="bg-slate-950 p-3 rounded border border-slate-600 overflow-x-auto">
+                            <code id="access-curl" class="text-yellow-400 text-xs font-mono block whitespace-pre-wrap break-words">curl command here</code>
+                        </div>
+                        <button onclick="copyToClipboard('access-curl', this)" class="mt-2 px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white text-xs rounded font-semibold">Copy cURL</button>
+                    </div>
+
+                    <!-- JavaScript Example -->
+                    <div>
+                        <h4 class="text-white font-semibold text-sm mb-2">JavaScript Fetch:</h4>
+                        <div class="bg-slate-950 p-3 rounded border border-slate-600 overflow-x-auto">
+                            <code id="access-javascript" class="text-cyan-400 text-xs font-mono block whitespace-pre-wrap break-words">fetch code here</code>
+                        </div>
+                        <button onclick="copyToClipboard('access-javascript', this)" class="mt-2 px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white text-xs rounded font-semibold">Copy JavaScript</button>
+                    </div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="bg-slate-900 border border-green-600 rounded-lg p-4">
+                    <h3 class="text-green-400 font-semibold mb-3">📌 How to Use</h3>
+                    <ol class="text-gray-300 text-sm space-y-2 list-decimal list-inside">
+                        <li>Copy the API URL and access token above</li>
+                        <li>Make a POST request to the URL with your question</li>
+                        <li>Include the access token in the Authorization header</li>
+                        <li>Send your question in the request body as JSON</li>
+                        <li>The agent will respond with an answer based on its capabilities</li>
+                    </ol>
+                </div>
+
+                <!-- Close Button -->
+                <button onclick="document.getElementById('agent-access-modal').classList.add('hidden')" class="w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTH MODAL -->
+    <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Agent Marketplace</h2>
+            
+            <div class="flex gap-4 mb-6">
+                <button id="login-tab" class="flex-1 px-4 py-2 bg-blue-500 text-white rounded font-semibold">Login</button>
+                <button id="register-tab" class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded font-semibold">Register</button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <form id="login-form" class="space-y-4">
+                <input 
+                    type="text" 
+                    id="login-username"
+                    class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    placeholder="Username"
+                    required
+                />
+                <input 
+                    type="password" 
+                    id="login-password"
+                    class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+                    placeholder="Password"
+                    required
+                />
+                <button type="submit" class="w-full px-4 py-2 bg-blue-500 text-white rounded font-semibold hover:bg-blue-600">
+                    Login
+                </button>
+                <p class="text-sm text-gray-600 mt-2">Demo: admin/admin123 or user1/user123</p>
+            </form>
+
+            <!-- REGISTER FORM (hidden) -->
+            <form id="register-form" class="space-y-4 hidden">
+                <input 
+                    type="text" 
+                    id="register-username"
+                    class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500"
+                    placeholder="Create username"
+                    required
+                />
+                <input 
+                    type="password" 
+                    id="register-password"
+                    class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500"
+                    placeholder="Create password"
+                    required
+                />
+                <button type="submit" class="w-full px-4 py-2 bg-green-500 text-white rounded font-semibold hover:bg-green-600">
+                    Register
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 shadow-lg">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <h1 class="text-white text-3xl font-bold">
+                <span class="text-orange-400">◆</span> Agent Marketplace
+            </h1>
+            <div class="flex items-center gap-6">
+                <div class="text-right">
+                    <div id="current-user" class="text-gray-400 font-mono text-sm">Not logged in</div>
+                    <div class="text-xs text-gray-500 mt-1">Auth: JWT Bearer Token</div>
+                </div>
+                <button id="logout-btn" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded font-semibold hidden">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content" class="hidden">
+        <div class="p-6 max-w-7xl mx-auto">
+            
+            <!-- TABS -->
+            <div class="flex gap-4 mb-6 border-b border-slate-700">
+                <button id="tab-agents" class="px-6 py-3 text-white font-semibold border-b-2 border-orange-400">Agent Cards</button>                <button id="tab-ask" class="px-6 py-3 text-gray-400 font-semibold border-b-2 border-transparent hover:text-white">Ask Agent</button>                <button id="tab-communication" class="px-6 py-3 text-gray-400 font-semibold border-b-2 border-transparent hover:text-white">A2A Communication</button>
+                <button id="tab-logs" class="px-6 py-3 text-gray-400 font-semibold border-b-2 border-transparent hover:text-white">Logs Viewer</button>
+            </div>
+
+            <!-- TAB 1: AGENT CARDS -->
+            <div id="agents-section" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="agent-grid">
+                    <div class="col-span-3 text-center py-12">
+                        <p class="text-gray-400 text-lg animate-pulse">Loading agents...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 1.5: ASK AGENT (SIMPLE INTERFACE) -->
+            <div id="ask-section" class="hidden space-y-6">
+                <div class="bg-green-900 bg-opacity-30 border border-green-500 rounded-lg p-4 mb-6">
+                    <h3 class="text-green-300 font-semibold mb-2">💬 Simple Ask Interface</h3>
+                    <p class="text-gray-300 text-sm">
+                        Select a purchased agent and ask it a question. The answer will appear below.
+                    </p>
+                </div>
+
+                <div class="bg-slate-700 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-white mb-4">Ask Your Agent</h3>
+                    
+                    <form id="ask-form" class="space-y-4">
+                        <div>
+                            <label class="block text-gray-300 font-semibold mb-2">Select Agent:</label>
+                            <select id="ask-agent-select" class="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-orange-400 focus:outline-none">
+                                <option value="">-- Choose an agent --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-300 font-semibold mb-2">Your Question:</label>
+                            <textarea id="ask-question" placeholder="Ask something..." class="w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:border-orange-400 focus:outline-none resize-vertical" rows="4"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors">
+                            Ask Agent
+                        </button>
+                    </form>
+
+                    <div id="ask-result" class="hidden mt-6 p-4 bg-slate-800 border border-slate-600 rounded-lg">
+                        <h4 class="text-orange-400 font-semibold mb-2">Agent Response:</h4>
+                        <p id="ask-result-text" class="text-gray-300 leading-relaxed"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: A2A COMMUNICATION -->
+            <div id="communication-section" class="hidden space-y-6">
+                <div class="bg-blue-900 bg-opacity-30 border border-blue-500 rounded-lg p-4 mb-6">
+                    <h3 class="text-blue-300 font-semibold mb-2">🔐 Authentication Type</h3>
+                    <p class="text-gray-300 text-sm">
+                        <strong>JWT Bearer Token Authentication</strong> - All A2A communications and API requests are secured with JWT tokens. Your session token is stored securely and sent with each request in the Authorization header.
+                    </p>
+                    <div class="mt-3 text-xs text-gray-400 font-mono bg-slate-800 p-2 rounded overflow-x-auto">
+                        Authorization: Bearer &lt;your_jwt_token&gt;
+                    </div>
+                </div>
+
+                <div class="bg-slate-700 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-white mb-4">Send Agent-to-Agent Message</h3>
+                    
+                    <form id="a2a-form" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-gray-300 text-sm font-semibold block mb-2">From Agent</label>
+                                <select id="from-agent" class="w-full px-4 py-2 bg-slate-600 text-white rounded border border-slate-500 focus:outline-none focus:border-orange-400" required>
+                                    <option>Select agent...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-gray-300 text-sm font-semibold block mb-2">To Agent</label>
+                                <select id="to-agent" class="w-full px-4 py-2 bg-slate-600 text-white rounded border border-slate-500 focus:outline-none focus:border-orange-400" required>
+                                    <option>Select agent...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-gray-300 text-sm font-semibold block mb-2">Message Payload (JSON)</label>
+                            <textarea 
+                                id="payload-json"
+                                class="w-full px-4 py-2 bg-slate-600 text-white rounded border border-slate-500 focus:outline-none focus:border-orange-400 font-mono text-sm"
+                                rows="5"
+                                placeholder='{"action": "query", "data": "example"}'
+                                required
+                            ></textarea>
+                        </div>
+                        <button type="submit" class="w-full px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded transition">
+                            Send Message
+                        </button>
+                    </form>
+
+                    <div id="a2a-response" class="mt-6 p-4 bg-slate-800 rounded border border-slate-600 hidden">
+                        <h4 class="text-orange-400 font-semibold mb-2">Response:</h4>
+                        <pre id="a2a-response-text" class="text-gray-300 font-mono text-sm overflow-x-auto"></pre>
+                    </div>
+                </div>
+
+                <!-- Communication History -->
+                <div class="bg-slate-700 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-white mb-4">Communication History</h3>
+                    <div id="comm-history" class="space-y-3 max-h-96 overflow-y-auto">
+                        <p class="text-gray-400 text-sm">No messages yet...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: LOGS VIEWER -->
+            <div id="logs-section" class="hidden space-y-6">
+                <div class="bg-slate-700 rounded-lg p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-white">System Logs</h3>
+                        <div class="flex gap-2">
+                            <select id="log-filter" class="px-4 py-2 bg-slate-600 text-white rounded border border-slate-500 text-sm">
+                                <option value="">All Events</option>
+                                <option value="AUTH_SUCCESS">Authentication Success</option>
+                                <option value="AUTH_FAILED">Authentication Failed</option>
+                                <option value="A2A_MESSAGE">Agent Messages</option>
+                                <option value="AGENTS_FETCHED">Agent Fetches</option>
+                                <option value="LOGS_FETCHED">Log Fetches</option>
+                            </select>
+                            <button id="clear-logs" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded font-semibold text-sm">
+                                Clear Logs
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="logs-container" class="bg-slate-800 rounded p-4 font-mono text-sm text-green-400 overflow-y-auto max-h-96 border border-slate-600 space-y-1">
+                        <div class="text-gray-500">Loading logs...</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        const API_BASE = "http://localhost:8000";
+        let authToken = localStorage.getItem('token');
+        let currentUser = localStorage.getItem('user');
+        let purchasedMap = {};
+        let agents = [];
+        let accessStatus = {};
+
+        // ============ AUTH FUNCTIONS ============
+        function showAuth() {
+            document.getElementById('auth-modal').classList.remove('hidden');
+            document.getElementById('main-content').classList.add('hidden');
+        }
+
+        function hideAuth() {
+            document.getElementById('auth-modal').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+        }
+
+        function updateAuthUI() {
+            if (authToken) {
+                document.getElementById('current-user').textContent = `Logged in as: ${currentUser}`;
+                document.getElementById('logout-btn').classList.remove('hidden');
+                hideAuth();
+            } else {
+                showAuth();
+            }
+        }
+
+        // Tab switching
+        document.getElementById('login-tab').addEventListener('click', () => {
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('register-form').classList.add('hidden');
+            document.getElementById('login-tab').classList.add('bg-blue-500');
+            document.getElementById('register-tab').classList.remove('bg-blue-500');
+        });
+
+        document.getElementById('register-tab').addEventListener('click', () => {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.remove('hidden');
+            document.getElementById('register-tab').classList.add('bg-blue-500');
+            document.getElementById('login-tab').classList.remove('bg-blue-500');
+        });
+
+        // Login
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const res = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!res.ok) throw new Error('Login failed');
+                
+                const data = await res.json();
+                authToken = data.access_token;
+                currentUser = data.user;
+                
+                localStorage.setItem('token', authToken);
+                localStorage.setItem('user', currentUser);
+                
+                updateAuthUI();
+                loadAgents();
+                loadCommunicationHistory();
+                loadLogs();
+            } catch (error) {
+                alert('Login failed: ' + error.message);
+            }
+        });
+
+        // Register
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+
+            try {
+                const res = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!res.ok) throw new Error('Registration failed');
+                
+                const data = await res.json();
+                authToken = data.access_token;
+                currentUser = data.user;
+                
+                localStorage.setItem('token', authToken);
+                localStorage.setItem('user', currentUser);
+                
+                updateAuthUI();
+                loadAgents();
+            } catch (error) {
+                alert('Registration failed: ' + error.message);
+            }
+        });
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            authToken = null;
+            currentUser = null;
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            updateAuthUI();
+        });
+
+        // ============ AGENT DETAIL MODAL ============
+        let selectedAgent = null;
+
+        function openAgentModal(agent) {
+            selectedAgent = agent;
+            document.getElementById('modal-agent-name').textContent = agent.name;
+            document.getElementById('modal-agent-id').textContent = `ID: ${agent.id}`;
+            document.getElementById('modal-agent-description').textContent = agent.description;
+            document.getElementById('modal-agent-purpose').textContent = agent.purpose;
+            document.getElementById('modal-agent-version').textContent = agent.version;
+            document.getElementById('question-agent-id').value = agent.id;
+            
+            const capabilitiesDiv = document.getElementById('modal-agent-capabilities');
+            capabilitiesDiv.innerHTML = agent.capabilities.map(cap => `
+                <span class="px-3 py-1 bg-orange-500 bg-opacity-30 text-orange-300 text-xs rounded">
+                    ${cap}
+                </span>
+            `).join('');
+
+            const statusDiv = document.getElementById('modal-agent-status');
+            statusDiv.textContent = agent.status;
+            statusDiv.className = agent.status === 'active' 
+                ? 'px-3 py-1 rounded-full text-xs font-semibold bg-green-500 bg-opacity-30 text-green-300'
+                : 'px-3 py-1 rounded-full text-xs font-semibold bg-gray-500 bg-opacity-30 text-gray-300';
+
+            document.getElementById('agent-modal').classList.remove('hidden');
+        }
+
+        document.getElementById('close-modal').addEventListener('click', () => {
+            document.getElementById('agent-modal').classList.add('hidden');
+            selectedAgent = null;
+        });
+
+        document.getElementById('agent-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'agent-modal') {
+                document.getElementById('agent-modal').classList.add('hidden');
+                selectedAgent = null;
+            }
+        });
+
+        // Ask agent question
+        document.getElementById('agent-question-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const question = document.getElementById('agent-question-input').value;
+            const agentId = document.getElementById('question-agent-id').value;
+
+            // Show loading state
+            const loadingDiv = document.getElementById('agent-question-loading');
+            const responseDiv = document.getElementById('agent-question-response');
+            const responseText = document.getElementById('agent-question-response-text');
+            
+            responseDiv.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+
+            try {
+                const res = await fetch(`${API_BASE}/agents/${agentId}/ask`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ question: question })
+                });
+
+                if (res.status === 402) {
+                    // Demo limit exceeded - show purchase prompt
+                    loadingDiv.classList.add('hidden');
+                    const errorData = await res.json();
+                    responseDiv.classList.remove('hidden');
+                    responseDiv.classList.remove('bg-green-900', 'border-green-500');
+                    responseDiv.classList.add('bg-blue-900', 'border-blue-500');
+                    responseDiv.querySelector(':first-child').textContent = '💳 Purchase Required:';
+                    responseDiv.querySelector(':first-child').classList.remove('text-green-300');
+                    responseDiv.querySelector(':first-child').classList.add('text-blue-300');
+                    responseText.textContent = `${errorData.detail}\n\nClick the "Buy" button on the agent card to purchase unlimited access.`;
+                    return;
+                }
+
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({}));
+                    throw new Error(errorData.detail || `HTTP ${res.status}: Failed to ask question`);
+                }
+                
+                const data = await res.json();
+                
+                // Hide loading and show response
+                loadingDiv.classList.add('hidden');
+                responseText.textContent = data.response;
+                responseDiv.classList.remove('hidden');
+                responseDiv.classList.add('bg-green-900', 'border-green-500');
+                responseDiv.classList.remove('bg-blue-900', 'border-blue-500', 'bg-red-900', 'border-red-500');
+                responseDiv.querySelector(':first-child').textContent = '✓ Agent Response:';
+                responseDiv.querySelector(':first-child').classList.remove('text-blue-300', 'text-red-300');
+                responseDiv.querySelector(':first-child').classList.add('text-green-300');
+                
+                // Scroll to response
+                responseDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                document.getElementById('agent-question-input').value = '';
+                
+                // Auto-hide after 10 seconds
+                setTimeout(() => {
+                    responseDiv.classList.add('hidden');
+                }, 10000);
+
+                // Reload logs and access status
+                loadLogs();
+                loadAgents(); // Reload to update demo counter
+            } catch (error) {
+                loadingDiv.classList.add('hidden');
+                responseDiv.classList.remove('hidden');
+                responseDiv.classList.remove('bg-green-900', 'border-green-500', 'bg-blue-900', 'border-blue-500');
+                responseDiv.classList.add('bg-red-900', 'border-red-500');
+                responseDiv.querySelector(':first-child').textContent = '✗ Error:';
+                responseDiv.querySelector(':first-child').classList.remove('text-green-300', 'text-blue-300');
+                responseDiv.querySelector(':first-child').classList.add('text-red-300');
+                responseText.textContent = `❌ ${error.message}`;
+            }
+        });
+
+        // ============ UTILITY FUNCTIONS ============
+        function copyToClipboard(elementId, button) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                if (button) {
+                    const originalText = button.textContent;
+                    button.textContent = '✓ Copied!';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                    }, 2000);
+                }
+            }).catch(err => {
+                alert('Failed to copy: ' + err.message);
+            });
+        }
+
+        function showAgentAccessModal(data) {
+            document.getElementById('access-agent-name').textContent = data.agent_name || 'Agent';
+            document.getElementById('access-url').textContent = data.url;
+            document.getElementById('access-token').textContent = data.access_token;
+            
+            const instructions = data.usage_instructions || {};
+            document.getElementById('access-curl').textContent = instructions.example_curl || 'curl command not available';
+            document.getElementById('access-javascript').textContent = instructions.example_javascript || 'javascript code not available';
+            
+            document.getElementById('agent-access-modal').classList.remove('hidden');
+        }
+
+        // ============ AGENT LOADING ============
+        async function loadAgents() {
+            try {
+                const grid = document.getElementById('agent-grid');
+                console.log('loadAgents: Starting - authToken:', authToken ? 'exists' : 'null');
+                
+                const res = await fetch(`${API_BASE}/agents`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                console.log('loadAgents: Fetch response status:', res.status);
+                
+                if (!res.ok) {
+                    const errText = await res.text();
+                    console.error('loadAgents: Response not ok. Status:', res.status, 'Body:', errText);
+                    throw new Error(`Failed to load agents (${res.status}): ${errText}`);
+                }
+                
+                const agents_data = await res.json();
+                agents = agents_data;
+                console.log('loadAgents: Agents loaded:', agents);
+                
+                // get purchases to know which agents are owned
+                const purchasesRes = await fetch(`${API_BASE}/users/me/purchases`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (purchasesRes.ok) {
+                    const purchasesJson = await purchasesRes.json().catch(() => ({}));
+                    purchasedMap = purchasesJson.purchases || {};
+                } else {
+                    purchasedMap = {};
+                }
+
+                // Get access status for all agents
+                const accessRes = await fetch(`${API_BASE}/agents/my-access-status`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (accessRes.ok) {
+                    accessStatus = await accessRes.json().catch(() => ({}));
+                    console.log('Access status loaded:', accessStatus);
+                }
+
+                grid.innerHTML = agents.map(agent => {
+                    const status = accessStatus[agent.id] || {};
+                    const isPurchased = status.is_purchased;
+                    const demoUsesLeft = status.demo_uses_left || 0;
+                    
+                    return `
+                    <div class="bg-slate-700 border border-slate-600 rounded-lg p-6 hover:border-orange-400 transition-all cursor-pointer group" data-agent-id="${agent.id}" onclick="openAgentModal(${JSON.stringify(agent).replace(/"/g, '&quot;')})">
+                        <div class="text-4xl mb-3">🤖</div>
+                        <h3 class="text-xl font-bold text-white mb-2">${agent.name}</h3>
+                        <p class="text-gray-300 text-sm mb-3">${agent.description}</p>
+                        <div class="mb-4 p-3 bg-slate-800 rounded text-xs text-gray-400">
+                            <strong>Purpose:</strong> ${agent.purpose}
+                        </div>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            ${agent.capabilities.map(cap => `
+                                <span class="px-2 py-1 bg-orange-500 bg-opacity-30 text-orange-300 text-xs rounded">
+                                    ${cap}
+                                </span>
+                            `).join('')}
+                        </div>
+                        <div class="flex justify-between items-center pt-4 border-t border-slate-600">
+                            <span class="text-xs font-mono text-gray-400">ID: ${agent.id}</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold ${
+                                agent.status === 'active' 
+                                    ? 'bg-green-500 bg-opacity-30 text-green-300' 
+                                    : 'bg-gray-500 bg-opacity-30 text-gray-300'
+                            }">
+                                ${agent.status}
+                            </span>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-400">
+                            ${isPurchased ? 
+                                '<span class="text-green-400 font-semibold">✓ Owned</span>' 
+                                : 
+                                `<span class="text-yellow-400" data-demo-tries>Demo: ${demoUsesLeft} try${demoUsesLeft !== 1 ? 'ies' : ''} left</span>`
+                            }
+                        </div>
+                        <div class="mt-4 flex items-center gap-2">
+                            <div class="text-xs text-orange-400 group-hover:text-orange-300 font-semibold">➤ Click for details</div>
+                            ${purchasedMap && purchasedMap[agent.id] ?
+                                `<button onclick="event.stopPropagation(); openAgentEndpoint('${agent.id}');" class="ml-auto px-3 py-1 bg-green-500 text-white rounded text-xs font-semibold">Access</button>`
+                                :
+                                `<button onclick="event.stopPropagation(); purchaseAgent('${agent.id}');" class="ml-auto px-3 py-1 bg-blue-500 text-white rounded text-xs font-semibold">Buy</button>`
+                            }
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+
+                // Populate dropdowns for A2A
+                const fromSelect = document.getElementById('from-agent');
+                const toSelect = document.getElementById('to-agent');
+                fromSelect.innerHTML = agents.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+                toSelect.innerHTML = agents.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+                
+                // Populate Ask Agent dropdown
+                populateAskAgentDropdown();
+                
+                console.log('loadAgents: Completed successfully');
+            } catch (error) {
+                console.error('Agent loading failed:', error);
+                const grid = document.getElementById('agent-grid');
+                grid.innerHTML = `
+                    <div class="col-span-3 text-center py-12">
+                        <div class="bg-red-900 bg-opacity-50 border border-red-600 rounded-lg p-6 mb-4">
+                            <p class="text-red-300 text-lg font-bold">Error Loading Agents</p>
+                            <p class="text-red-200 text-sm mt-2">${error.message}</p>
+                            <p class="text-gray-400 text-xs mt-3">Check console (F12) for details</p>
+                        </div>
+                        <button onclick="location.reload()" class="px-4 py-2 bg-blue-500 text-white rounded font-semibold">Refresh Page</button>
+                    </div>
+                `;
+            }
+        }
+
+        // ============ A2A COMMUNICATION ============
+        document.getElementById('a2a-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fromAgent = document.getElementById('from-agent').value;
+            const toAgent = document.getElementById('to-agent').value;
+            const payloadStr = document.getElementById('payload-json').value;
+
+            try {
+                const payload = JSON.parse(payloadStr);
+                
+                const res = await fetch(`${API_BASE}/agents/send-message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        from_agent: fromAgent,
+                        to_agent: toAgent,
+                        payload: payload
+                    })
+                });
+
+                if (!res.ok) throw new Error('Message failed');
+                
+                const data = await res.json();
+                const responseDiv = document.getElementById('a2a-response');
+                document.getElementById('a2a-response-text').textContent = JSON.stringify(data, null, 2);
+                responseDiv.classList.remove('hidden');
+
+                loadCommunicationHistory();
+                loadLogs();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+
+        async function loadCommunicationHistory() {
+            try {
+                console.log('loadCommunicationHistory: Starting');
+                const res = await fetch(`${API_BASE}/agents/communication/history?limit=20`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Failed to load history (${res.status})`);
+                }
+
+                const history = await res.json();
+                const container = document.getElementById('comm-history');
+                
+                if (history.length === 0) {
+                    container.innerHTML = '<p class="text-gray-400 text-sm">No messages yet...</p>';
+                    return;
+                }
+
+                container.innerHTML = history.map(msg => `
+                    <div class="bg-slate-800 p-3 rounded border border-slate-600 text-sm">
+                        <div class="text-orange-400 font-mono mb-1">${msg.from_agent} → ${msg.to_agent}</div>
+                        <div class="text-gray-300 font-mono text-xs overflow-x-auto">
+                            ${JSON.stringify(msg.payload).substring(0, 100)}...
+                        </div>
+                        <div class="text-gray-500 text-xs mt-2">${new Date(msg.timestamp).toLocaleTimeString()}</div>
+                    </div>
+                `).join('');
+                console.log('loadCommunicationHistory: Loaded', history.length, 'messages');
+            } catch (error) {
+                console.error('History loading failed:', error);
+                const container = document.getElementById('comm-history');
+                container.innerHTML = `<p class="text-red-400 text-sm">Error: ${error.message}</p>`;
+            }
+        }
+
+        // ============ LOGS VIEWER ============
+        async function loadLogs() {
+            try {
+                const filter = document.getElementById('log-filter')?.value || '';
+                console.log('loadLogs: Starting - filter:', filter);
+                
+                const res = await fetch(`${API_BASE}/logs?limit=100${filter ? `&event_type=${filter}` : ''}`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Failed to load logs (${res.status})`);
+                }
+
+                const logs = await res.json();
+                const container = document.getElementById('logs-container');
+                
+                if (!Array.isArray(logs)) {
+                    console.warn('logs is not array:', typeof logs, logs);
+                    container.innerHTML = `<p class="text-yellow-400 text-xs">Warning: Unexpected response format</p>`;
+                    return;
+                }
+                
+                container.innerHTML = logs.map(log => {
+                    const levelColor = log.level === 'ERROR' ? 'text-red-400' : 
+                                      log.level === 'WARN' ? 'text-yellow-400' : 'text-green-400';
+                    return `<div class="${levelColor}">
+                        [${new Date(log.timestamp).toLocaleTimeString()}] ${log.event_type} ${log.user ? `(${log.user})` : ''} ${JSON.stringify(log.details)}
+                    </div>`;
+                }).join('');
+                console.log('loadLogs: Loaded', logs.length, 'logs');
+            } catch (error) {
+                console.error('Log loading failed:', error);
+                const container = document.getElementById('logs-container');
+                container.innerHTML = `<p class="text-red-400 text-sm">Error: ${error.message}</p>`;
+            }
+        }
+
+        document.getElementById('log-filter').addEventListener('change', loadLogs);
+
+        document.getElementById('clear-logs').addEventListener('click', async () => {
+            if (!confirm('Clear all logs?')) return;
+            
+            try {
+                await fetch(`${API_BASE}/logs`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                loadLogs();
+            } catch (error) {
+                alert('Failed to clear logs');
+            }
+        });
+
+        // ============ TAB SWITCHING ============
+        document.getElementById('tab-agents').addEventListener('click', () => {
+            document.getElementById('agents-section').classList.remove('hidden');
+            document.getElementById('ask-section').classList.add('hidden');
+            document.getElementById('communication-section').classList.add('hidden');
+            document.getElementById('logs-section').classList.add('hidden');
+            document.getElementById('tab-agents').classList.add('text-white', 'border-orange-400');
+            document.getElementById('tab-agents').classList.remove('text-gray-400', 'border-transparent');
+            document.getElementById('tab-ask').classList.remove('text-white', 'border-orange-400');
+            document.getElementById('tab-ask').classList.add('text-gray-400', 'border-transparent');
+            document.getElementById('tab-communication').classList.remove('text-white', 'border-orange-400');
+            document.getElementById('tab-communication').classList.add('text-gray-400', 'border-transparent');
+            document.getElementById('tab-logs').classList.remove('text-white', 'border-orange-400');
+            document.getElementById('tab-logs').classList.add('text-gray-400', 'border-transparent');
+        });
+
+        document.getElementById('tab-ask').addEventListener('click', () => {
+            document.getElementById('agents-section').classList.add('hidden');
+            document.getElementById('ask-section').classList.remove('hidden');
+            document.getElementById('communication-section').classList.add('hidden');
+            document.getElementById('logs-section').classList.add('hidden');
+            document.getElementById('tab-ask').classList.add('text-white', 'border-orange-400');
+            document.getElementById('tab-ask').classList.remove('text-gray-400', 'border-transparent');
+            document.getElementById('tab-agents').classList.remove('text-white', 'border-orange-400');
+            document.getElementById('tab-agents').classList.add('text-gray-400', 'border-transparent');
+            document.getElementById('tab-communication').classList.remove('text-white', 'border-orange-400');
+            document.getElementById('tab-communication').classList.add('text-gray-400', 'border-transparent');
+            document.getElementById('tab-logs').classList.remove('text-white', 'border-orange-400');
+            document.getElementById('tab-logs').classList.add('text-gray-400', 'border-transparent');
+            populateAskAgentDropdown();
+        });
+
+        document.getElementById('tab-communication').addEventListener('click', () => {
+            document.getElementById('agents-section').classList.add('hidden');
+            document.getElementById('ask-section').classList.add('hidden');
+            document.getElementById('communication-section').classList.remove('hidden');
+            document.getElementById('logs-section').classList.add('hidden');
+            document.getElementById('tab-communication').classList.add('text-white', 'border-orange-400');
+            document.getElementById('tab-communication').classList.remove('text-gray-400', 'border-transparent');
+            document.getElementById('tab-agents').classList.remove('text-white', 'border-orange-400');
+            document.getElementById('tab-agents').classList.add('text-gray-400', 'border-transparent');
+            document.getElementById('tab-ask').classList.remove('text-white', 'border-orange-400');
+            document.getElementById('tab-ask').classList.add('text-gray-400', 'border-transparent');
+            document.getElementById('tab-logs').classList.remove('text-white', 'border-orange-400');
+            document.getElementById('tab-logs').classList.add('text-gray-400', 'border-transparent');
+        });
+
+        document.getElementById('tab-logs').addEventListener('click', () => {
+            document.getElementById('agents-section').classList.add('hidden');
+            document.getElementById('ask-section').classList.add('hidden');
+            document.getElementById('communication-section').classList.add('hidden');
+            document.getElementById('logs-section').classList.remove('hidden');
+            document.getElementById('tab-logs').classList.add('text-white', 'border-orange-400');
+            document.getElementById('tab-logs').classList.remove('text-gray-400', 'border-transparent');
+            document.getElementById('tab-agents').classList.remove('text-white', 'border-orange-400');
+            document.getElementById('tab-agents').classList.add('text-gray-400', 'border-transparent');
+            document.getElementById('tab-ask').classList.remove('text-white', 'border-orange-400');
+            document.getElementById('tab-ask').classList.add('text-gray-400', 'border-transparent');
+            document.getElementById('tab-communication').classList.remove('text-white', 'border-orange-400');
+            document.getElementById('tab-communication').classList.add('text-gray-400', 'border-transparent');
+            loadLogs();
+        });
+
+        // ============ HELPER FUNCTIONS ============
+        function log_event(event_type, details) {
+            // Local logging helper
+            console.log(`[${event_type}]`, details);
+        }
+
+        // Purchase flow
+        async function purchaseAgent(agentId) {
+            if (!confirm('Purchase this agent for demo access?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/agents/${agentId}/purchase`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Purchase failed');
+                }
+
+                const data = await res.json();
+                // Show access details modal instead of alert
+                showAgentAccessModal(data);
+                // refresh agents to show Access button
+                setTimeout(() => {
+                    loadAgents();
+                    loadLogs();
+                }, 500);
+            } catch (error) {
+                alert('Purchase error: ' + error.message);
+            }
+        }
+
+        function openAgentEndpoint(agentId) {
+            const rec = purchasedMap && purchasedMap[agentId];
+            if (!rec) {
+                alert('No purchase record found.');
+                return;
+            }
+            
+            // Build modal data from purchase record
+            const modalData = {
+                agent_name: rec.agent_name || agentId,
+                url: rec.url || `http://localhost:8001/agents/${agentId}/ask`,
+                access_token: rec.access_token || rec.access_key,
+                usage_instructions: {
+                    example_curl: `curl -X POST "${rec.url || `http://localhost:8001/agents/${agentId}/ask`}" -H "Authorization: Bearer ${rec.access_token || rec.access_key}" -H "Content-Type: application/json" -d '{"question":"Your question here"}'`,
+                    example_javascript: `fetch("${rec.url || `http://localhost:8001/agents/${agentId}/ask`}", {
+  method: "POST",
+  headers: {
+    "Authorization": "Bearer ${rec.access_token || rec.access_key}",
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ question: "Your question here" })
+}).then(r => r.json()).then(d => console.log(d))`
+                }
+            };
+            
+            showAgentAccessModal(modalData);
+        }
+
+        // Ask Agent feature
+        function populateAskAgentDropdown() {
+            const select = document.getElementById('ask-agent-select');
+            select.innerHTML = '<option value="">-- Choose an agent --</option>';
+            
+            // Show both purchased and available demo agents
+            if (agents && agents.length > 0) {
+                agents.forEach(agent => {
+                    const status = accessStatus[agent.id] || {};
+                    const isPurchased = status.is_purchased;
+                    const demoUsesLeft = status.demo_uses_left || 0;
+                    const canUse = isPurchased || (demoUsesLeft > 0);
+                    
+                    if (canUse) {
+                        const option = document.createElement('option');
+                        option.value = agent.id;
+                        const label = isPurchased 
+                            ? `${agent.name} (Owned)`
+                            : `${agent.name} (Demo: ${demoUsesLeft} tries)`;
+                        option.textContent = label;
+                        select.appendChild(option);
+                    }
+                });
+                
+                if (select.children.length === 1) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No agents available';
+                    option.disabled = true;
+                    select.appendChild(option);
+                }
+            }
+        }
+
+        async function askAgent(agentId, question) {
+            if (!agentId || !question.trim()) {
+                alert('Please select an agent and ask a question');
+                return;
+            }
+
+            try {
+                // Get access for this agent (purchased or demo)
+                const agentAccessRes = await fetch(`${API_BASE}/agents/my-access-status`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const accessStatus = await agentAccessRes.json().catch(() => ({}));
+                const agentStatus = accessStatus[agentId] || {};
+                
+                // Use purchased access or demo if available
+                let purchase = purchasedMap[agentId];
+                if (!purchase && agentStatus.can_use) {
+                    // Create temp access for demo agent
+                    const agent = agents.find(a => a.id === agentId);
+                    purchase = {
+                        url: `${API_BASE}/agents/${agentId}/ask`,
+                        agent_name: agent ? agent.name : agentId,
+                        access_token: authToken
+                    };
+                }
+                
+                if (!purchase || !purchase.url) {
+                    alert('Agent information not found or demo tries exhausted');
+                    return;
+                }
+
+                // Show loading state
+                const resultDiv = document.getElementById('ask-result');
+                const resultText = document.getElementById('ask-result-text');
+                resultText.innerHTML = '<em>Getting agent response...</em>';
+                resultDiv.classList.remove('hidden');
+
+                // Call the agent endpoint
+                const res = await fetch(purchase.url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${purchase.access_token}`
+                    },
+                    body: JSON.stringify({ question: question })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.detail || `Error: ${res.status}`);
+                }
+
+                const data = await res.json();
+                resultText.innerHTML = `<strong>${purchase.agent_name}:</strong> ${data.response || data.answer || 'No response'}`;
+                
+                // Update global accessStatus immediately with response data
+                if (data.demo_uses_left !== undefined && !data.is_purchased) {
+                    if (!accessStatus[agentId]) {
+                        accessStatus[agentId] = {};
+                    }
+                    const oldTries = accessStatus[agentId].demo_uses_left;
+                    accessStatus[agentId].demo_uses_left = data.demo_uses_left;
+                    console.log(`✓ Demo tries UPDATED: ${oldTries} → ${data.demo_uses_left} left for agent ${agentId}`);
+                    
+                    // Update just this agent's display in the grid immediately
+                    const agentCards = document.querySelectorAll('[data-agent-id]');
+                    agentCards.forEach(card => {
+                        if (card.getAttribute('data-agent-id') === agentId) {
+                            const demoSpan = card.querySelector('[data-demo-tries]');
+                            if (demoSpan) {
+                                const tries = data.demo_uses_left;
+                                demoSpan.textContent = `Demo: ${tries} try${tries !== 1 ? 'ies' : ''} left`;
+                                console.log(`✓ Grid display updated for ${agentId}: ${tries} tries`);
+                            }
+                        }
+                    });
+                    
+                    // Refresh dropdown to show updated count
+                    populateAskAgentDropdown();
+                }
+                
+                // Also refresh all data after a delay to sync with backend
+                setTimeout(() => {
+                    console.log('Refresh full agent list from backend...');
+                    loadAgents();
+                }, 800);
+                
+            } catch (error) {
+                const resultDiv = document.getElementById('ask-result');
+                const resultText = document.getElementById('ask-result-text');
+                resultText.innerHTML = `<span class="text-red-400">Error: ${error.message}</span>`;
+                resultDiv.classList.remove('hidden');
+            }
+        }
+
+        // Ask form submission
+        document.getElementById('ask-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const agentId = document.getElementById('ask-agent-select').value;
+            const question = document.getElementById('ask-question').value;
+            askAgent(agentId, question);
+        });
+
+        // ============ INITIALIZATION ============
+        updateAuthUI();
+        
+        if (authToken) {
+            loadAgents();
+            loadCommunicationHistory();
+            loadLogs();
+            setInterval(() => { loadLogs(); loadCommunicationHistory(); }, 5000);
+        }
+    </script>
+</body>
+</html>
