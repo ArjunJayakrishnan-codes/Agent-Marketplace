@@ -83,6 +83,7 @@ MCP_ALLOWED_HOSTS = [h.strip().lower() for h in os.getenv("MCP_ALLOWED_HOSTS", "
 MCP_ENABLE_PUBLIC_DISCOVERY = os.getenv("MCP_ENABLE_PUBLIC_DISCOVERY", "false").strip().lower() == "true"
 MCP_MAX_SOURCE_CODE_CHARS = 50000
 MCP_MAX_WRITE_CHARS = 20000
+DEMO_TRIAL_LIMIT = 5
 mcp_rate_limits: Dict[str, List[float]] = {}
 
 # ============================================
@@ -365,6 +366,65 @@ mcp_servers_db: Dict[str, MCPServer] = {
 
 workspace_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 mcp_api_headers: Dict[str, Dict[str, str]] = {}
+state_db_path = os.path.join(os.path.dirname(__file__), "marketplace_state.db")
+
+
+def init_state_db() -> None:
+    conn = sqlite3.connect(state_db_path)
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS demo_usage (
+                username TEXT PRIMARY KEY,
+                total_used INTEGER NOT NULL DEFAULT 0,
+                updated_at TEXT NOT NULL
+            );
+            """
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def increment_demo_usage(username: str, limit: int) -> int:
+    """Atomically increment and return total demo usage for a user."""
+    conn = sqlite3.connect(state_db_path)
+    try:
+        cur = conn.cursor()
+        cur.execute("BEGIN IMMEDIATE")
+        cur.execute("SELECT total_used FROM demo_usage WHERE username = ?", [username])
+        row = cur.fetchone()
+        current_total = int(row[0]) if row else 0
+
+        if current_total >= limit:
+            conn.rollback()
+            raise HTTPException(
+                status_code=403,
+                detail=f"Demo limit reached ({limit}/{limit} total). Purchase this agent to continue."
+            )
+
+        new_total = current_total + 1
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        if row:
+            cur.execute(
+                "UPDATE demo_usage SET total_used = ?, updated_at = ? WHERE username = ?",
+                [new_total, now_iso, username]
+            )
+        else:
+            cur.execute(
+                "INSERT INTO demo_usage (username, total_used, updated_at) VALUES (?, ?, ?)",
+                [username, new_total, now_iso]
+            )
+
+        conn.commit()
+        return new_total
+    finally:
+        conn.close()
+
+
+init_state_db()
 
 
 def get_chinook_db_path() -> Optional[str]:
@@ -1752,7 +1812,7 @@ async def ask_agent(
     user_record = fake_users_db.get(actual_user)
     has_purchased = user_record and agent_id in user_record.get("purchased_agents", {})
 
-    demo_limit = 5
+    demo_limit = DEMO_TRIAL_LIMIT
     demo_mode = False
     demo_uses_left = None
 
@@ -1760,17 +1820,9 @@ async def ask_agent(
         if user_record is None:
             raise HTTPException(status_code=401, detail="User not found")
 
+        total_used = increment_demo_usage(actual_user, demo_limit)
         demo_usage = user_record.setdefault("demo_usage", {})
-        total_used = sum(int(v or 0) for v in demo_usage.values())
-        if total_used >= demo_limit:
-            raise HTTPException(
-                status_code=403,
-                detail="Demo limit reached (5/5 total). Purchase this agent to continue."
-            )
-
-        used = int(demo_usage.get(agent_id, 0)) + 1
-        demo_usage[agent_id] = used
-        total_used += 1
+        demo_usage[agent_id] = int(demo_usage.get(agent_id, 0)) + 1
         demo_mode = True
         demo_uses_left = max(0, demo_limit - total_used)
 
