@@ -458,11 +458,11 @@ function AgentModal({
             >
               {demoInfo ? (
                 <p style={{ margin: 0, fontSize: '0.9rem' }}>
-                  Demo mode: {demoInfo.left}/{demoInfo.limit} tries left before purchase is required.
+                  Demo mode: {demoInfo.left}/{demoInfo.limit} total tries left before purchase is required.
                 </p>
               ) : (
                 <p style={{ margin: 0, fontSize: '0.9rem' }}>
-                  Demo mode available: you can ask up to 5 questions before purchase is required.
+                  Demo mode available: you can ask up to 5 total questions before purchase is required.
                 </p>
               )}
             </div>

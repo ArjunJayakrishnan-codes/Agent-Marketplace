@@ -1550,6 +1550,53 @@ AGENT_EXAMPLE_QUERIES = {
     ]
 }
 
+AGENT_DOMAIN_KEYWORDS = {
+    "agent-001": [
+        "catalog", "genre", "genres", "track", "tracks", "playlist", "playlists",
+        "media", "format", "album", "albums", "artist", "artists", "inventory", "coverage"
+    ],
+    "agent-002": [
+        "revenue", "sales", "invoice", "invoices", "aov", "order", "orders", "customer value",
+        "ltv", "trend", "monthly", "country", "countries", "geography", "monetization", "value"
+    ],
+    "agent-003": [
+        "retention", "churn", "lifecycle", "segment", "segmentation", "repeat", "inactive",
+        "frequency", "engagement", "customer", "customers", "last purchase", "activity"
+    ],
+    "agent-004": [
+        "artist", "artists", "album", "albums", "genre", "genres", "performance", "ranking",
+        "revenue", "sales", "track", "tracks", "content", "commercial"
+    ],
+    "agent-005": [
+        "operations", "workforce", "support", "representative", "rep", "employee", "employees",
+        "hierarchy", "manager", "organization", "territory", "country", "countries", "staff", "staffing"
+    ]
+}
+
+
+def is_question_in_agent_domain(agent_id: str, question: str) -> bool:
+    qlow = (question or "").strip().lower()
+    if not qlow:
+        return False
+
+    keywords = AGENT_DOMAIN_KEYWORDS.get(agent_id, [])
+    return any(keyword in qlow for keyword in keywords)
+
+
+def build_out_of_domain_message(agent_id: str) -> str:
+    agent = agents_db.get(agent_id)
+    agent_name = agent.name if agent else "This agent"
+    examples = AGENT_EXAMPLE_QUERIES.get(agent_id, [])[:3]
+    if examples:
+        examples_text = "\n".join([f"- {ex}" for ex in examples])
+        return (
+            f"{agent_name}: This question is outside my domain. "
+            "Please ask questions related to my specialization.\n"
+            "Try one of these:\n"
+            f"{examples_text}"
+        )
+    return f"{agent_name}: This question is outside my domain. Please ask a domain-related question."
+
 
 def get_public_api_prefix(request: Request) -> str:
     """Infer external API prefix (e.g. /api) from incoming request path."""
@@ -1698,6 +1745,33 @@ async def ask_agent(
     
     # Extract the actual username from the auth result
     actual_user = current_user.split(":")[0] if ":" in current_user else current_user
+
+    q_text = request.question
+
+    if not is_question_in_agent_domain(agent_id, q_text):
+        response_text = build_out_of_domain_message(agent_id)
+        log_event(
+            "AGENT_DOMAIN_REJECTED",
+            {
+                "agent_id": agent_id,
+                "agent_name": agents_db[agent_id].name,
+                "question": q_text[:100],
+                "user": actual_user
+            },
+            level="INFO",
+            user=actual_user
+        )
+        return {
+            "agent_id": agent_id,
+            "agent_name": agents_db[agent_id].name,
+            "question": q_text,
+            "response": response_text,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "is_purchased": agent_id in fake_users_db.get(actual_user, {}).get("purchased_agents", {}),
+            "demo_mode": False,
+            "demo_uses_left": None,
+            "demo_uses_limit": 5
+        }
     
     # Access control: Check if user purchased this agent
     user_record = fake_users_db.get(actual_user)
@@ -1712,20 +1786,20 @@ async def ask_agent(
             raise HTTPException(status_code=401, detail="User not found")
 
         demo_usage = user_record.setdefault("demo_usage", {})
-        used = int(demo_usage.get(agent_id, 0))
-        if used >= demo_limit:
+        total_used = sum(int(v or 0) for v in demo_usage.values())
+        if total_used >= demo_limit:
             raise HTTPException(
                 status_code=403,
-                detail="Demo limit reached (5/5). Purchase this agent to continue."
+                detail="Demo limit reached (5/5 total). Purchase this agent to continue."
             )
 
-        used += 1
+        used = int(demo_usage.get(agent_id, 0)) + 1
         demo_usage[agent_id] = used
+        total_used += 1
         demo_mode = True
-        demo_uses_left = max(0, demo_limit - used)
+        demo_uses_left = max(0, demo_limit - total_used)
 
     agent = agents_db[agent_id]
-    q_text = request.question
     
     # Generate intelligent response based on agent capabilities
     response_text = None
