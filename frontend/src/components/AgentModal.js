@@ -72,7 +72,7 @@ function AgentModal({
     } catch (err) {
       if (err.response?.status === 403) {
         setShowPurchasePrompt(true);
-        setError('Purchase required to use this agent.');
+        setError(err.response?.data?.detail || 'Purchase required to use this agent.');
         onLoadAgents();
       } else {
         setError(err.response?.data?.detail || 'Error asking agent');

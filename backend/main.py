@@ -119,7 +119,8 @@ fake_users_db = {
         "hashed_password": pwd_context.hash("admin123"),
         "purchased_agents": {},
         "purchased_mcp_servers": {},  # {mcp_server_id: {purchase_date, license_key}}
-        "active_token_jti": None
+        "active_token_jti": None,
+        "demo_usage": {}
     },
     "user1": {
         "username": "user1",
@@ -127,7 +128,8 @@ fake_users_db = {
         "hashed_password": pwd_context.hash("user123"),
         "purchased_agents": {},
         "purchased_mcp_servers": {},  # {mcp_server_id: {purchase_date, license_key}}
-        "active_token_jti": None
+        "active_token_jti": None,
+        "demo_usage": {}
     }
 }
 
@@ -1152,7 +1154,8 @@ async def register(user: LoginRequest):
         "hashed_password": hashed_password,
         "purchased_agents": {},
         "purchased_mcp_servers": {},
-        "active_token_jti": None
+        "active_token_jti": None,
+        "demo_usage": {}
     }
 
     new_token_jti = str(uuid4())
@@ -1699,9 +1702,27 @@ async def ask_agent(
     # Access control: Check if user purchased this agent
     user_record = fake_users_db.get(actual_user)
     has_purchased = user_record and agent_id in user_record.get("purchased_agents", {})
-    
+
+    demo_limit = 3
+    demo_mode = False
+    demo_uses_left = None
+
     if actual_user != "admin" and not has_purchased:
-        raise HTTPException(status_code=403, detail="Purchase required to use this agent")
+        if user_record is None:
+            raise HTTPException(status_code=401, detail="User not found")
+
+        demo_usage = user_record.setdefault("demo_usage", {})
+        used = int(demo_usage.get(agent_id, 0))
+        if used >= demo_limit:
+            raise HTTPException(
+                status_code=403,
+                detail="Demo limit reached (3/3). Purchase this agent to continue."
+            )
+
+        used += 1
+        demo_usage[agent_id] = used
+        demo_mode = True
+        demo_uses_left = max(0, demo_limit - used)
 
     agent = agents_db[agent_id]
     q_text = request.question
@@ -2061,7 +2082,10 @@ async def ask_agent(
         "question": q_text,
         "response": response_text,
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "is_purchased": has_purchased
+        "is_purchased": has_purchased,
+        "demo_mode": demo_mode,
+        "demo_uses_left": demo_uses_left,
+        "demo_uses_limit": demo_limit
     }
 
 # AGENT ACCESS HELPER ENDPOINT
