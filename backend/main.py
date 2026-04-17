@@ -1748,31 +1748,6 @@ async def ask_agent(
 
     q_text = request.question
 
-    if not is_question_in_agent_domain(agent_id, q_text):
-        response_text = build_out_of_domain_message(agent_id)
-        log_event(
-            "AGENT_DOMAIN_REJECTED",
-            {
-                "agent_id": agent_id,
-                "agent_name": agents_db[agent_id].name,
-                "question": q_text[:100],
-                "user": actual_user
-            },
-            level="INFO",
-            user=actual_user
-        )
-        return {
-            "agent_id": agent_id,
-            "agent_name": agents_db[agent_id].name,
-            "question": q_text,
-            "response": response_text,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "is_purchased": agent_id in fake_users_db.get(actual_user, {}).get("purchased_agents", {}),
-            "demo_mode": False,
-            "demo_uses_left": None,
-            "demo_uses_limit": 5
-        }
-    
     # Access control: Check if user purchased this agent
     user_record = fake_users_db.get(actual_user)
     has_purchased = user_record and agent_id in user_record.get("purchased_agents", {})
@@ -1798,6 +1773,31 @@ async def ask_agent(
         total_used += 1
         demo_mode = True
         demo_uses_left = max(0, demo_limit - total_used)
+
+    if not is_question_in_agent_domain(agent_id, q_text):
+        response_text = build_out_of_domain_message(agent_id)
+        log_event(
+            "AGENT_DOMAIN_REJECTED",
+            {
+                "agent_id": agent_id,
+                "agent_name": agents_db[agent_id].name,
+                "question": q_text[:100],
+                "user": actual_user
+            },
+            level="INFO",
+            user=actual_user
+        )
+        return {
+            "agent_id": agent_id,
+            "agent_name": agents_db[agent_id].name,
+            "question": q_text,
+            "response": response_text,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "is_purchased": has_purchased,
+            "demo_mode": demo_mode,
+            "demo_uses_left": demo_uses_left,
+            "demo_uses_limit": demo_limit
+        }
 
     agent = agents_db[agent_id]
     
