@@ -4,7 +4,12 @@ import './App.css';
 import AuthModal from './components/AuthModal';
 import MainContent from './components/MainContent';
 
-const API_BASE = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+const isLocalDevHost =
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1';
+const API_BASE =
+  process.env.REACT_APP_API_BASE_URL ||
+  (isLocalDevHost ? 'http://localhost:8000' : '/api');
 
 function App() {
   const [authToken, setAuthToken] = useState(localStorage.getItem('token'));
