@@ -12,13 +12,19 @@ const API_BASE =
   (isLocalDevHost ? 'http://localhost:8000' : '/api');
 
 function App() {
-  const [authToken, setAuthToken] = useState(localStorage.getItem('token'));
-  const [currentUser, setCurrentUser] = useState(localStorage.getItem('user'));
+  const [authToken, setAuthToken] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [agents, setAgents] = useState([]);
   const [purchasedMap, setPurchasedMap] = useState({});
   const [accessStatus, setAccessStatus] = useState({});
   const [logs, setLogs] = useState([]);
   const [commHistory, setCommHistory] = useState([]);
+
+  useEffect(() => {
+    // Do not reuse old JWTs between sessions.
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  }, []);
 
   useEffect(() => {
     if (authToken) {
@@ -74,8 +80,6 @@ function App() {
   const handleLogin = (token, user) => {
     setAuthToken(token);
     setCurrentUser(user);
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', user);
   };
 
   const handleLogout = () => {

@@ -23,6 +23,29 @@ function AgentModal({
   const [accessDetails, setAccessDetails] = useState(null);
   const [loadingAccessDetails, setLoadingAccessDetails] = useState(false);
 
+  const copyText = async (text, successMessage) => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const copied = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        if (!copied) throw new Error('Copy command failed');
+      }
+      alert(successMessage);
+    } catch (err) {
+      console.error('Copy failed:', err);
+      alert('Copy failed. Please copy manually.');
+    }
+  };
+
   const handleAsk = async (e) => {
     e.preventDefault();
     if (!question.trim()) return;
@@ -336,8 +359,7 @@ function AgentModal({
                 marginRight: '0.5rem'
               }}
               onClick={() => {
-                navigator.clipboard.writeText(accessDetails.url);
-                alert('URL copied to clipboard!');
+                copyText(accessDetails.url, 'URL copied to clipboard!');
               }}
             >
               Copy URL
@@ -399,8 +421,7 @@ function AgentModal({
                 fontSize: '0.875rem'
               }}
               onClick={() => {
-                navigator.clipboard.writeText(purchaseSuccess.url);
-                alert('URL copied to clipboard!');
+                copyText(purchaseSuccess.url, 'URL copied to clipboard!');
               }}
             >
               Copy URL

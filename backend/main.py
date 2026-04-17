@@ -2355,12 +2355,6 @@ async def get_agent_endpoint_info(agent_id: str):
             const question = document.getElementById('questionInput').value.trim();
 
             if (!token) {{
-                try {{
-                    token = localStorage.getItem('token') || '';
-                    if (token) document.getElementById('tokenInput').value = token;
-                }} catch (_) {{}}
-            }}
-            if (!token) {{
                 showError('Please enter your JWT token or access key');
                 return;
             }}
@@ -2422,14 +2416,6 @@ async def get_agent_endpoint_info(agent_id: str):
                 askAgent();
             }}
         }});
-
-        // Pre-fill token from localStorage when available.
-        try {{
-            const savedToken = localStorage.getItem('token');
-            if (savedToken) {{
-                document.getElementById('tokenInput').value = savedToken;
-            }}
-        }} catch (_) {{}}
         </script>
     </body>
     </html>
