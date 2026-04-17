@@ -1812,19 +1812,13 @@ async def ask_agent(
     user_record = fake_users_db.get(actual_user)
     has_purchased = user_record and agent_id in user_record.get("purchased_agents", {})
 
-    demo_limit = DEMO_TRIAL_LIMIT
-    demo_mode = False
-    demo_uses_left = None
-
     if actual_user != "admin" and not has_purchased:
         if user_record is None:
             raise HTTPException(status_code=401, detail="User not found")
-
-        total_used = increment_demo_usage(actual_user, demo_limit)
-        demo_usage = user_record.setdefault("demo_usage", {})
-        demo_usage[agent_id] = int(demo_usage.get(agent_id, 0)) + 1
-        demo_mode = True
-        demo_uses_left = max(0, demo_limit - total_used)
+        raise HTTPException(
+            status_code=403,
+            detail="Purchase required to use this agent."
+        )
 
     if not is_question_in_agent_domain(agent_id, q_text):
         response_text = build_out_of_domain_message(agent_id)
@@ -1845,10 +1839,7 @@ async def ask_agent(
             "question": q_text,
             "response": response_text,
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "is_purchased": has_purchased,
-            "demo_mode": demo_mode,
-            "demo_uses_left": demo_uses_left,
-            "demo_uses_limit": demo_limit
+            "is_purchased": has_purchased
         }
 
     agent = agents_db[agent_id]
@@ -2208,10 +2199,7 @@ async def ask_agent(
         "question": q_text,
         "response": response_text,
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "is_purchased": has_purchased,
-        "demo_mode": demo_mode,
-        "demo_uses_left": demo_uses_left,
-        "demo_uses_limit": demo_limit
+        "is_purchased": has_purchased
     }
 
 # AGENT ACCESS HELPER ENDPOINT

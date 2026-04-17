@@ -22,7 +22,6 @@ function AgentModal({
   const [showAccessDetails, setShowAccessDetails] = useState(false);
   const [accessDetails, setAccessDetails] = useState(null);
   const [loadingAccessDetails, setLoadingAccessDetails] = useState(false);
-  const [demoInfo, setDemoInfo] = useState(null);
 
   const copyText = async (text, successMessage) => {
     try {
@@ -68,22 +67,11 @@ function AgentModal({
       );
 
       setResponse(res.data.response);
-      if (res.data.demo_mode) {
-        setDemoInfo({
-          left: typeof res.data.demo_uses_left === 'number' ? res.data.demo_uses_left : null,
-          limit: typeof res.data.demo_uses_limit === 'number' ? res.data.demo_uses_limit : 5
-        });
-      } else {
-        setDemoInfo(null);
-      }
       setQuestion('');
       onLoadAgents();
     } catch (err) {
       if (err.response?.status === 403) {
         setShowPurchasePrompt(true);
-        if ((err.response?.data?.detail || '').toLowerCase().includes('demo limit reached')) {
-          setDemoInfo({ left: 0, limit: 5 });
-        }
         setError(err.response?.data?.detail || 'Purchase required to use this agent.');
         onLoadAgents();
       } else {
@@ -445,31 +433,6 @@ function AgentModal({
         ) : null}
 
         {!purchaseSuccess && !showAccessDetails && (
-          !isPurchased ? (
-            <div
-              style={{
-                marginBottom: '1rem',
-                padding: '0.75rem 1rem',
-                backgroundColor: '#eef6ff',
-                border: '1px solid #b8d8f2',
-                borderRadius: '0.5rem',
-                color: '#1f5a78'
-              }}
-            >
-              {demoInfo ? (
-                <p style={{ margin: 0, fontSize: '0.9rem' }}>
-                  Demo mode: {demoInfo.left}/{demoInfo.limit} total tries left before purchase is required.
-                </p>
-              ) : (
-                <p style={{ margin: 0, fontSize: '0.9rem' }}>
-                  Demo mode available: you can ask up to 5 total questions before purchase is required.
-                </p>
-              )}
-            </div>
-          ) : null
-        )}
-
-        {!purchaseSuccess && !showAccessDetails && (
           <form onSubmit={handleAsk} style={{ marginBottom: '1rem' }}>
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', color: '#1e2630' }}>
@@ -478,7 +441,7 @@ function AgentModal({
               <textarea
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                disabled={loading}
+                disabled={loading || !isPurchased}
                 style={{
                   width: '100%',
                   padding: '0.75rem',
@@ -490,17 +453,17 @@ function AgentModal({
                   fontSize: '0.875rem',
                   minHeight: '100px',
                   resize: 'vertical',
-                  opacity: loading ? 0.6 : 1
+                  opacity: !isPurchased ? 0.5 : 1
                 }}
                 placeholder="Type your question here..."
               />
             </div>
             <button
               type="submit"
-              disabled={loading || !question.trim()}
+              disabled={loading || !question.trim() || !isPurchased}
               className="btn btn-primary"
               style={{
-                opacity: loading || !question.trim() ? 0.5 : 1
+                opacity: loading || !question.trim() || !isPurchased ? 0.5 : 1
               }}
             >
               {loading ? 'Asking...' : 'Ask Agent'}
