@@ -1582,21 +1582,24 @@ async def get_access_details(
         log_event("UNAUTHORIZED_ACCESS", {"agent_id": agent_id}, level="WARN", user=current_user)
         raise HTTPException(status_code=403, detail="You do not own this agent. Purchase it first.")
     
-    # Get the access key from purchase record
+    # Rotate access key on every details fetch so older keys become invalid.
     purchase_record = purchases[agent_id]
-    access_key = purchase_record.get("access_key")
+    access_key = str(uuid4())
+    purchase_record["access_key"] = access_key
+    purchase_record["access_key_rotated_at"] = datetime.now(timezone.utc).isoformat()
     
     # Build the access URL (respect reverse-proxy API prefix)
     full_url = build_agent_ask_url(request, agent_id)
     
-    log_event("ACCESS_DETAILS_FETCHED", {"agent_id": agent_id}, user=current_user)
+    log_event("ACCESS_DETAILS_FETCHED", {"agent_id": agent_id, "access_key_rotated": True}, user=current_user)
     
     return {
         "agent_id": agent_id,
         "agent_name": agents_db[agent_id].name,
         "url": full_url,
         "access_key": access_key,
-        "purchased_at": purchase_record.get("purchased_at")
+        "purchased_at": purchase_record.get("purchased_at"),
+        "access_key_rotated_at": purchase_record.get("access_key_rotated_at")
     }
 
 # AGENT COMMUNICATION ENDPOINTS
